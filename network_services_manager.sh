@@ -8,6 +8,18 @@
 
 set -o pipefail
 
+# Garantir compatibilidade de terminal, saneamento de tty e sinais
+export TERM="${TERM:-xterm-256color}"
+stty sane 2>/dev/null || true
+
+# Se stdin não for um terminal interativo mas /dev/tty estiver disponível, reconectar
+if [[ ! -t 0 && -r /dev/tty ]]; then
+    exec < /dev/tty
+fi
+
+# Tratamento de interrupção (Ctrl+C / SIGTERM) para restaurar terminal limpo
+trap 'stty sane 2>/dev/null; clear; echo "Gerenciador de Serviços finalizado."; exit 0' INT TERM
+
 # ------------------------------------------------------------------------------
 # 1. Verificação de Privilégios e Pré-requisitos
 # ------------------------------------------------------------------------------
@@ -65,7 +77,7 @@ main_menu() {
     while true; do
         local choice
         choice=$(whiptail --title "Gerenciador de Serviços de Rede Corporativos" \
-            --menu "Ambiente: Debian / Ubuntu | Logs: /var/log/network_services_manager.log\nSelecione o serviço ou módulo desejado:" 20 74 9 \
+            --menu "Ambiente: Debian / Ubuntu | Logs: /var/log/network_services_manager.log\n[Setas ↑/↓ ou números 1-9 para selecionar | Tab alterna botões | Esc Esc sai]:" 20 74 9 \
             "1" "Dnsmasq (DHCP & DNS Integrado - Moderno & Leve)" \
             "2" "DNS Server (Bind9 - Cache & Forwarders)" \
             "3" "Active Directory Domain Controller (Samba 4 AD DC)" \

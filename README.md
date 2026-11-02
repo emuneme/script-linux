@@ -16,9 +16,12 @@ curl -fsSL https://raw.githubusercontent.com/emuneme/script-linux/main/install.s
 > 1. Instala pré-requisitos essenciais (`git`, `curl`, `whiptail`).
 > 2. Clona o repositório em `/opt/network-services-manager`.
 > 3. Configura permissões e cria o comando global `/usr/local/bin/netmanager`.
-> 4. Inicia a interface imediatamente (e permite executar futuramente apenas com `sudo netmanager`).
+> 4. Cria o atalho de execução interativa `sudo netmanager`.
 
----
+Para abrir o gerenciador a qualquer momento no seu terminal:
+```bash
+sudo netmanager
+```
 
 ## 1. Estrutura Modular do Projeto
 

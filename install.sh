@@ -47,13 +47,14 @@ echo " Repositório: $REPO_URL"
 echo "======================================================================"
 echo ""
 
-# Se conectado a um terminal interativo, inicia o gerenciador diretamente
-if [[ -r /dev/tty ]]; then
+# Se o instalador estiver sendo executado diretamente em terminal interativo
+if [[ -t 0 ]]; then
     echo "Iniciando a interface interativa..."
     sleep 1
-    exec "$BIN_LINK" < /dev/tty
+    exec "$BIN_LINK"
 else
-    echo "Instalação concluída. Para iniciar, execute:"
+    echo "Para iniciar a interface interativa do gerenciador, execute:"
     echo "  sudo netmanager"
 fi
+
 
