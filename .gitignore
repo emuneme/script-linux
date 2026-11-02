@@ -1,0 +1,9 @@
+# OS and Temp Files
+.DS_Store
+Thumbs.db
+*.bak
+*.bak.*
+*.log
+
+# Local agent metadata
+.agents/
