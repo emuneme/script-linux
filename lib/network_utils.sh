@@ -18,13 +18,13 @@ select_network_interface() {
     done < <(ip -o link show | awk -F': ' '{print $2}' | grep -v '^lo$' | cut -d'@' -f1)
 
     if [[ ${#ifaces_menu[@]} -eq 0 ]]; then
-        whiptail --title "Erro de Rede" --msgbox "Nenhuma placa de rede ativa encontrada no sistema (exceto 'lo')." 8 60
+        whiptail --title "Erro de Rede" --msgbox "Nenhuma placa de rede ativa encontrada no sistema (exceto 'lo')." 8 60 >&2
         return 1
     fi
 
     local selected_iface
     selected_iface=$(whiptail --title "Detecção de Placas de Rede" \
-        --menu "$prompt_msg" 16 68 6 "${ifaces_menu[@]}" 3>&1 1>&2 2>&3)
+        --menu "$prompt_msg" 15 66 5 "${ifaces_menu[@]}" 3>&1 1>&2 2>&3)
 
     if [[ $? -ne 0 || -z "$selected_iface" ]]; then
         return 1
@@ -41,13 +41,13 @@ check_and_resolve_port_53_conflict() {
     # Verifica se há processo escutando na porta 53
     if ss -tulpn 2>/dev/null | grep -q ':53 '; then
         local process_name
-        process_name=$(ss -tulpn 2>/dev/null | grep ':53 ' | awk '{print $NF}' | head -n1)
+        process_name=$(ss -tulpn 2>/dev/null | grep ':53 ' | awk '{print $NF}' | head -n1 | tr -d '"')
         
         log_message "WARN" "Conflito detectado na porta 53: $process_name. Alvo: $target_service"
 
-        local prompt="A porta 53 já está em uso no sistema por:\n$process_name\n\nIsso impedirá a inicialização do $target_service.\nNormalmente, no Ubuntu/Debian moderno isso decorre do 'systemd-resolved'.\n\nDeseja liberar a porta 53 (desativando o DNSStubListener e ajustando /etc/resolv.conf) automaticamente agora?"
+        local prompt="A porta 53 já está em uso no sistema:\n$process_name\n\nIsso pode impedir o funcionamento do $target_service.\nDeseja que o gerenciador desative o DNSStubListener e libere a porta 53 automaticamente agora?"
         
-        if whiptail --title "Conflito de Porta 53 Detectado" --yesno "$prompt" 16 68; then
+        if whiptail --title "Conflito na Porta 53" --yesno "$prompt" 14 66; then
             {
                 echo 25
                 echo "XXX\nAjustando /etc/systemd/resolved.conf...\nXXX"
@@ -87,7 +87,7 @@ EOF
             return 0
         else
             log_message "WARN" "Usuário optou por ignorar o conflito da porta 53."
-            return 1
+            return 0
         fi
     fi
     return 0

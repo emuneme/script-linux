@@ -53,6 +53,6 @@ $last_logs
 ==============================================================
 Pressione [Enter] ou [Esc] para retornar ao Menu Principal."
 
-    whiptail --title "Painel Geral de Monitoramento" --scrolltext --msgbox "$report" 24 72
+    whiptail --title "Painel Geral de Monitoramento" --scrolltext --msgbox "$report" 20 70
 }
 

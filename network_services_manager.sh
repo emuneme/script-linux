@@ -90,6 +90,9 @@ main_menu() {
 
         local exit_status=$?
 
+        # Sanitiza valor de choice contra carriage return ou espaços residuais
+        choice=$(echo "$choice" | tr -d '\r\n[:space:]')
+
         # Trata ESC ou Cancelar como confirmação de encerramento
         if [[ $exit_status -ne 0 || "$choice" == "9" ]]; then
             if whiptail --title "Confirmar Saída" --yesno "Deseja realmente encerrar o gerenciador?" 8 50; then
@@ -101,6 +104,8 @@ main_menu() {
             continue
         fi
 
+        log_message "INFO" "Menu principal: opção '$choice' selecionada."
+
         case "$choice" in
             1) configure_dnsmasq ;;
             2) configure_dns_bind9 ;;
@@ -110,7 +115,10 @@ main_menu() {
             6) manage_ufw_firewall ;;
             7) configure_static_ip_netplan ;;
             8) show_general_status_dashboard ;;
-            *) whiptail --title "Aviso" --msgbox "Opção inválida." 8 40 ;;
+            *) 
+                log_message "WARN" "Opção desconhecida recebida: '$choice'"
+                whiptail --title "Aviso" --msgbox "Opção inválida ('$choice')." 8 45 
+                ;;
         esac
     done
 }
