@@ -64,8 +64,19 @@ EOF
                 ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf 2>/dev/null || echo -e "nameserver 1.1.1.1\nnameserver 8.8.8.8" > /etc/resolv.conf
 
                 echo 85
-                echo "XXX\nReiniciando systemd-resolved...\nXXX"
+                echo "XXX\nReiniciando systemd-resolved e liberando daemons conflitantes...\nXXX"
                 systemctl restart systemd-resolved >/dev/null 2>&1 || true
+
+                # Se o alvo for Dnsmasq/Samba, para Bind9 caso ativo
+                if [[ "$target_service" =~ Dnsmasq|Samba ]]; then
+                    systemctl stop bind9 named >/dev/null 2>&1 || true
+                    systemctl disable bind9 named >/dev/null 2>&1 || true
+                fi
+                # Se o alvo for Bind9/Samba, para Dnsmasq caso ativo
+                if [[ "$target_service" =~ Bind9|Samba ]]; then
+                    systemctl stop dnsmasq >/dev/null 2>&1 || true
+                    systemctl disable dnsmasq >/dev/null 2>&1 || true
+                fi
 
                 echo 100
                 echo "XXX\nPorta 53 liberada com sucesso!\nXXX"
