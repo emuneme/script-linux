@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Script de Instalação e Bootstrap - Network Services Manager
-# Repositório: https://github.com/emunene/script-linux.git
+# Repositório: https://github.com/emuneme/script-linux.git
 # ==============================================================================
 
 set -e
@@ -13,7 +13,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 INSTALL_DIR="/opt/network-services-manager"
-REPO_URL="https://github.com/emunene/script-linux.git"
+REPO_URL="https://github.com/emuneme/script-linux.git"
 BIN_LINK="/usr/local/bin/netmanager"
 
 echo "==> [1/4] Verificando e instalando pré-requisitos essenciais (git, curl, whiptail)..."
@@ -56,3 +56,4 @@ else
     echo "Instalação concluída. Para iniciar, execute:"
     echo "  sudo netmanager"
 fi
+

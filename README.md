@@ -9,7 +9,7 @@ Este documento fornece a documentação completa, estrutura de diretórios e o g
 Para instalar e executar diretamente a partir do repositório GitHub em qualquer servidor Debian ou Ubuntu:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/emunene/script-linux/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/emuneme/script-linux/main/install.sh | sudo bash
 ```
 
 > **O que o instalador faz automaticamente:**
