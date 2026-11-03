@@ -8,12 +8,14 @@ configure_dns_bind9() {
     check_and_resolve_port_53_conflict "Bind9 DNS" || return
 
     local forwarders
-    forwarders=$(whiptail --title "Bind9 - Forwarders" \
-        --inputbox "Servidores DNS Externos (Forwarders), separados por ponto e vírgula:" 8 65 "8.8.8.8; 1.1.1.1;" 3>&1 1>&2 2>&3) || return
+    forwarders=$(whiptail_capture --title "Bind9 - Forwarders" \
+        --inputbox "Servidores DNS Externos (Forwarders), separados por ponto e vírgula:" 8 65 "8.8.8.8; 1.1.1.1;") || return
+    forwarders=$(echo "$forwarders" | tr -d '\r')
 
     local allowed_nets
-    allowed_nets=$(whiptail --title "Bind9 - Redes Permitidas" \
-        --inputbox "Redes com permissão de consulta recursiva (allow-query):" 8 65 "any; 192.168.0.0/16; localhost;" 3>&1 1>&2 2>&3) || return
+    allowed_nets=$(whiptail_capture --title "Bind9 - Redes Permitidas" \
+        --inputbox "Redes com permissão de consulta recursiva (allow-query):" 8 65 "any; 192.168.0.0/16; localhost;") || return
+    allowed_nets=$(echo "$allowed_nets" | tr -d '\r')
 
     gauge_apt_install "Instalação do Bind9" "bind9" "bind9utils" "bind9-doc"
 

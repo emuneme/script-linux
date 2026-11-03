@@ -8,18 +8,25 @@ manage_ufw_firewall() {
         gauge_apt_install "Instalação do Firewall" "ufw"
     fi
 
+    local tmp_ufw
+    tmp_ufw=$(mktemp /tmp/netmgr_ufw.XXXXXX 2>/dev/null || echo "/tmp/netmgr_ufw.$$.tmp")
+
     while true; do
-        local ufw_opt
-        ufw_opt=$(whiptail --title "Gerenciamento de Firewall UFW" \
+        whiptail --title "Gerenciamento de Firewall UFW" \
             --menu "Escolha a operação desejada para o UFW:" 17 68 6 \
             "1" "Ativar Firewall (ufw enable)" \
             "2" "Desativar Firewall (ufw disable)" \
             "3" "Liberar Porta Específica (Custom Port/Protocol)" \
             "4" "Liberar Perfis Corporativos (DHCP, DNS, Samba, WG, Squid, SSH)" \
             "5" "Visualizar Regras Ativas (ufw status numbered)" \
-            "6" "Retornar ao Menu Principal" 3>&1 1>&2 2>&3)
+            "6" "Retornar ao Menu Principal" 2>"$tmp_ufw"
 
-        [[ $? -ne 0 || "$ufw_opt" == "6" ]] && break
+        local exit_status=$?
+        local ufw_opt
+        ufw_opt=$(cat "$tmp_ufw" 2>/dev/null | tr -d '\r\n[:space:]')
+        : > "$tmp_ufw"
+
+        [[ $exit_status -ne 0 || "$ufw_opt" == "6" ]] && break
 
         case "$ufw_opt" in
             1)
@@ -34,10 +41,11 @@ manage_ufw_firewall() {
                 local port
                 port=$(prompt_valid_port "UFW - Liberar Porta" "Informe o número da porta a ser liberada:" "8080") || continue
                 local proto
-                proto=$(whiptail --title "UFW - Protocolo" --menu "Selecione o protocolo:" 12 50 3 \
+                proto=$(whiptail_capture --title "UFW - Protocolo" --menu "Selecione o protocolo:" 12 50 3 \
                     "tcp" "Protocolo TCP" \
                     "udp" "Protocolo UDP" \
-                    "both" "Ambos (TCP e UDP)" 3>&1 1>&2 2>&3) || continue
+                    "both" "Ambos (TCP e UDP)") || continue
+                proto=$(echo "$proto" | tr -d '[:space:]')
 
                 if [[ "$proto" == "both" ]]; then
                     ufw allow "${port}" >> "$LOG_FILE" 2>&1
@@ -77,5 +85,6 @@ manage_ufw_firewall() {
                 ;;
         esac
     done
+    rm -f "$tmp_ufw"
 }
 

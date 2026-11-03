@@ -23,19 +23,22 @@ configure_dnsmasq() {
     netmask=$(prompt_valid_ipv4 "Dnsmasq - Máscara de Sub-rede" "Informe a máscara da rede:" "255.255.255.0") || return
 
     local lease_time
-    lease_time=$(whiptail --title "Dnsmasq - Tempo de Concessão (Lease)" \
-        --inputbox "Tempo de concessão do lease (Ex: 12h, 24h, 7d):" 8 60 "12h" 3>&1 1>&2 2>&3) || return
+    lease_time=$(whiptail_capture --title "Dnsmasq - Tempo de Concessão (Lease)" \
+        --inputbox "Tempo de concessão do lease (Ex: 12h, 24h, 7d):" 8 60 "12h") || return
+    lease_time=$(echo "$lease_time" | tr -d '[:space:]')
 
     local gateway
     gateway=$(prompt_valid_ipv4 "Dnsmasq - Gateway Padrão" "Informe o IP do Gateway (Roteador):" "192.168.1.1") || return
 
     local dns_upstream
-    dns_upstream=$(whiptail --title "Dnsmasq - Servidores DNS Externos" \
-        --inputbox "Servidores DNS Upstream para resolução externa (separados por vírgula):" 8 65 "1.1.1.1, 8.8.8.8" 3>&1 1>&2 2>&3) || return
+    dns_upstream=$(whiptail_capture --title "Dnsmasq - Servidores DNS Externos" \
+        --inputbox "Servidores DNS Upstream para resolução externa (separados por vírgula):" 8 65 "1.1.1.1, 8.8.8.8") || return
+    dns_upstream=$(echo "$dns_upstream" | tr -d '\r')
 
     local domain_name
-    domain_name=$(whiptail --title "Dnsmasq - Nome do Domínio" \
-        --inputbox "Domínio local da rede (Search Domain):" 8 60 "corp.local" 3>&1 1>&2 2>&3) || return
+    domain_name=$(whiptail_capture --title "Dnsmasq - Nome do Domínio" \
+        --inputbox "Domínio local da rede (Search Domain):" 8 60 "corp.local") || return
+    domain_name=$(echo "$domain_name" | tr -d '[:space:]')
 
     # 4. Instalação do pacote
     gauge_apt_install "Instalação do Dnsmasq" "dnsmasq"

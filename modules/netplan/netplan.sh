@@ -16,8 +16,9 @@ configure_static_ip_netplan() {
         "Informe o IP do Gateway padrão (Roteador):" "192.168.1.1") || return
 
     local dns_list
-    dns_list=$(whiptail --title "Netplan - Servidores DNS" \
-        --inputbox "Informe os DNSs (separados por vírgula):" 8 60 "1.1.1.1, 8.8.8.8" 3>&1 1>&2 2>&3) || return
+    dns_list=$(whiptail_capture --title "Netplan - Servidores DNS" \
+        --inputbox "Informe os DNSs (separados por vírgula):" 8 60 "1.1.1.1, 8.8.8.8") || return
+    dns_list=$(echo "$dns_list" | tr -d '\r')
 
     # Formata a lista de DNS para a sintaxe YAML [ "1.1.1.1", "8.8.8.8" ]
     local formatted_dns

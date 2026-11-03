@@ -4,18 +4,25 @@
 # ==============================================================================
 
 manage_wireguard_menu() {
+    local tmp_wg
+    tmp_wg=$(mktemp /tmp/netmgr_wg.XXXXXX 2>/dev/null || echo "/tmp/netmgr_wg.$$.tmp")
+
     while true; do
-        local wg_opt
-        wg_opt=$(whiptail --title "Gerenciamento de VPN WireGuard" \
+        whiptail --title "Gerenciamento de VPN WireGuard" \
             --menu "Escolha a operação desejada para o WireGuard:" 17 68 6 \
             "1" "Configurar / Inicializar Servidor WireGuard" \
             "2" "Adicionar Novo Cliente Peer (Novo Usuário)" \
             "3" "Listar Peers e Status da VPN (wg show)" \
             "4" "Exibir QR Code de Configuração de um Cliente" \
             "5" "Revogar / Excluir Cliente Peer" \
-            "6" "Retornar ao Menu Principal" 3>&1 1>&2 2>&3)
+            "6" "Retornar ao Menu Principal" 2>"$tmp_wg"
 
-        [[ $? -ne 0 || "$wg_opt" == "6" ]] && break
+        local exit_status=$?
+        local wg_opt
+        wg_opt=$(cat "$tmp_wg" 2>/dev/null | tr -d '\r\n[:space:]')
+        : > "$tmp_wg"
+
+        [[ $exit_status -ne 0 || "$wg_opt" == "6" ]] && break
 
         case "$wg_opt" in
             1) wg_setup_server ;;
@@ -25,6 +32,7 @@ manage_wireguard_menu() {
             5) wg_revoke_peer_client ;;
         esac
     done
+    rm -f "$tmp_wg"
 }
 
 # 1. Configuração Inicial do Servidor WireGuard
@@ -100,8 +108,8 @@ wg_add_peer_client() {
     fi
 
     local client_name
-    client_name=$(whiptail --title "Novo Peer - Identificador" \
-        --inputbox "Nome/Identificador do cliente (Ex: joao-laptop, diretoria):" 8 60 "cliente1" 3>&1 1>&2 2>&3) || return
+    client_name=$(whiptail_capture --title "Novo Peer - Identificador" \
+        --inputbox "Nome/Identificador do cliente (Ex: joao-laptop, diretoria):" 8 60 "cliente1") || return
     # Sanitiza o nome para evitar caracteres especiais
     client_name=$(echo "$client_name" | tr -cd '[:alnum:]_-')
     [[ -z "$client_name" ]] && return
@@ -110,8 +118,9 @@ wg_add_peer_client() {
     client_ip=$(prompt_valid_cidr "Novo Peer - Endereço IP" "IP do cliente no túnel (com /32):" "10.0.0.2/32") || return
 
     local client_dns
-    client_dns=$(whiptail --title "Novo Peer - DNS" \
-        --inputbox "Servidor DNS entregue ao cliente:" 8 60 "1.1.1.1" 3>&1 1>&2 2>&3) || return
+    client_dns=$(whiptail_capture --title "Novo Peer - DNS" \
+        --inputbox "Servidor DNS entregue ao cliente:" 8 60 "1.1.1.1") || return
+    client_dns=$(echo "$client_dns" | tr -d '[:space:]')
 
     # Gera chaves do cliente
     local cli_priv cli_pub srv_pub listen_port srv_ip
@@ -182,9 +191,10 @@ wg_show_client_qr() {
     fi
 
     local selected_file
-    selected_file=$(whiptail --title "Selecionar Cliente para QR Code" \
-        --menu "Escolha o perfil do cliente desejado:" 15 65 5 "${conf_files[@]}" 3>&1 1>&2 2>&3)
-    [[ $? -ne 0 || -z "$selected_file" ]] && return
+    selected_file=$(whiptail_capture --title "Selecionar Cliente para QR Code" \
+        --menu "Escolha o perfil do cliente desejado:" 15 65 5 "${conf_files[@]}") || return
+    selected_file=$(echo "$selected_file" | tr -d '[:space:]')
+    [[ -z "$selected_file" ]] && return
 
     # Renderiza o QR Code em tela cheia com pausa
     clear
@@ -210,9 +220,10 @@ wg_revoke_peer_client() {
     fi
 
     local selected_file
-    selected_file=$(whiptail --title "Revogar Cliente Peer" \
-        --menu "Selecione o cliente que deseja remover permanentemente:" 15 65 5 "${conf_files[@]}" 3>&1 1>&2 2>&3)
-    [[ $? -ne 0 || -z "$selected_file" ]] && return
+    selected_file=$(whiptail_capture --title "Revogar Cliente Peer" \
+        --menu "Selecione o cliente que deseja remover permanentemente:" 15 65 5 "${conf_files[@]}") || return
+    selected_file=$(echo "$selected_file" | tr -d '[:space:]')
+    [[ -z "$selected_file" ]] && return
 
     if whiptail --title "Confirmar Exclusão" --yesno "Tem certeza que deseja revogar o acesso de $(basename "$selected_file")?" 8 60; then
         # Extrai chave pública do arquivo do cliente

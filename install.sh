@@ -24,17 +24,19 @@ apt-get install -y -qq git curl whiptail >/dev/null 2>&1
 echo "==> [2/4] Sincronizando repositório em $INSTALL_DIR..."
 if [[ -d "$INSTALL_DIR/.git" ]]; then
     cd "$INSTALL_DIR"
-    git fetch origin main >/dev/null 2>&1 || true
-    git reset --hard origin/main >/dev/null 2>&1 || true
+    git fetch origin main
+    git reset --hard FETCH_HEAD
+    git clean -fd
 else
     rm -rf "$INSTALL_DIR"
-    git clone "$REPO_URL" "$INSTALL_DIR" >/dev/null 2>&1
+    git clone "$REPO_URL" "$INSTALL_DIR"
 fi
 
-echo "==> [3/4] Configurando permissões nos módulos..."
+echo "==> [3/4] Configurando permissões e normalizando arquivos..."
 chmod +x "$INSTALL_DIR/network_services_manager.sh"
 chmod +x "$INSTALL_DIR/lib/"*.sh 2>/dev/null || true
 chmod +x "$INSTALL_DIR/modules/"*/*.sh 2>/dev/null || true
+sed -i 's/\r$//' "$INSTALL_DIR/network_services_manager.sh" "$INSTALL_DIR/lib/"*.sh "$INSTALL_DIR/modules/"*/*.sh 2>/dev/null || true
 
 echo "==> [4/4] Criando atalho global no sistema ($BIN_LINK)..."
 ln -sf "$INSTALL_DIR/network_services_manager.sh" "$BIN_LINK"

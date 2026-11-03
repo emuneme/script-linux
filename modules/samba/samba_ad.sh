@@ -8,23 +8,25 @@ configure_samba_ad_dc() {
     check_and_resolve_port_53_conflict "Samba AD DC (DNS Interno)" || return
 
     local realm
-    realm=$(whiptail --title "Samba AD - Realm / Domínio FQDN" \
-        --inputbox "Informe o Realm do Domínio (Ex: CORP.LOCAL):" 8 60 "CORP.LOCAL" 3>&1 1>&2 2>&3) || return
-    realm=$(echo "$realm" | tr '[:lower:]' '[:upper:]')
+    realm=$(whiptail_capture --title "Samba AD - Realm / Domínio FQDN" \
+        --inputbox "Informe o Realm do Domínio (Ex: CORP.LOCAL):" 8 60 "CORP.LOCAL") || return
+    realm=$(echo "$realm" | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
 
     local domain_netbios
-    domain_netbios=$(whiptail --title "Samba AD - Nome NetBIOS" \
-        --inputbox "Informe o nome de Domínio NetBIOS (Ex: CORP):" 8 60 "CORP" 3>&1 1>&2 2>&3) || return
-    domain_netbios=$(echo "$domain_netbios" | tr '[:lower:]' '[:upper:]')
+    domain_netbios=$(whiptail_capture --title "Samba AD - Nome NetBIOS" \
+        --inputbox "Informe o nome de Domínio NetBIOS (Ex: CORP):" 8 60 "CORP") || return
+    domain_netbios=$(echo "$domain_netbios" | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
 
     local admin_pass
     while true; do
-        admin_pass=$(whiptail --title "Samba AD - Senha do Administrador" \
-            --passwordbox "Defina a senha do Administrador do Domínio (Mínimo: maiúscula, minúscula, número e símbolo):" 9 65 3>&1 1>&2 2>&3) || return
+        admin_pass=$(whiptail_capture --title "Samba AD - Senha do Administrador" \
+            --passwordbox "Defina a senha do Administrador do Domínio (Mínimo: maiúscula, minúscula, número e símbolo):" 9 65) || return
+        admin_pass=$(echo "$admin_pass" | tr -d '\r\n')
 
         local admin_pass_confirm
-        admin_pass_confirm=$(whiptail --title "Samba AD - Confirmação de Senha" \
-            --passwordbox "Confirme a senha do Administrador:" 8 65 3>&1 1>&2 2>&3) || return
+        admin_pass_confirm=$(whiptail_capture --title "Samba AD - Confirmação de Senha" \
+            --passwordbox "Confirme a senha do Administrador:" 8 65) || return
+        admin_pass_confirm=$(echo "$admin_pass_confirm" | tr -d '\r\n')
 
         if [[ "$admin_pass" == "$admin_pass_confirm" && -n "$admin_pass" ]]; then
             break

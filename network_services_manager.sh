@@ -74,9 +74,13 @@ log_message "INFO" "Sessão do Network Services Manager inicializada."
 # 3. Loop Principal e Menu Interativo
 # ------------------------------------------------------------------------------
 main_menu() {
+    local tmp_choice
+    tmp_choice=$(mktemp /tmp/netmgr_choice.XXXXXX 2>/dev/null || echo "/tmp/netmgr_choice.$$.tmp")
+
     while true; do
-        local choice
-        choice=$(whiptail --title "Gerenciador de Serviços de Rede Corporativos" \
+        stty sane 2>/dev/null || true
+
+        whiptail --title "Gerenciador de Serviços de Rede Corporativos" \
             --menu "Ambiente: Debian / Ubuntu | Logs: /var/log/network_services_manager.log\n[Setas ↑/↓ ou números 1-9 para selecionar | Tab alterna botões | Esc Esc sai]:" 20 74 9 \
             "1" "Dnsmasq (DHCP & DNS Integrado - Moderno & Leve)" \
             "2" "DNS Server (Bind9 - Cache & Forwarders)" \
@@ -86,16 +90,17 @@ main_menu() {
             "6" "Firewall (UFW - Regras, Perfis Corporativos & Status)" \
             "7" "Configuração de IP Estático (Netplan)" \
             "8" "Painel de Status Geral dos Serviços & Logs" \
-            "9" "Sair" 3>&1 1>&2 2>&3)
+            "9" "Sair" 2>"$tmp_choice"
 
         local exit_status=$?
-
-        # Sanitiza valor de choice contra carriage return ou espaços residuais
-        choice=$(echo "$choice" | tr -d '\r\n[:space:]')
+        local choice
+        choice=$(cat "$tmp_choice" 2>/dev/null | tr -d '\r\n[:space:]')
+        : > "$tmp_choice"
 
         # Trata ESC ou Cancelar como confirmação de encerramento
         if [[ $exit_status -ne 0 || "$choice" == "9" ]]; then
             if whiptail --title "Confirmar Saída" --yesno "Deseja realmente encerrar o gerenciador?" 8 50; then
+                rm -f "$tmp_choice"
                 clear
                 log_message "INFO" "Sessão encerrada pelo usuário."
                 echo "Gerenciador de Serviços finalizado com sucesso."
@@ -103,6 +108,8 @@ main_menu() {
             fi
             continue
         fi
+
+        [[ -z "$choice" ]] && continue
 
         log_message "INFO" "Menu principal: opção '$choice' selecionada."
 
@@ -121,6 +128,7 @@ main_menu() {
                 ;;
         esac
     done
+    rm -f "$tmp_choice"
 }
 
 # Inicialização do loop interativo

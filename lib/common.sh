@@ -124,6 +124,22 @@ validate_port() {
     return 1
 }
 
+# Helper seguro para captura de dados de whiptail sem conflito de descritores (3>&1)
+whiptail_capture() {
+    local tmp_cap
+    tmp_cap=$(mktemp /tmp/netmgr_cap.XXXXXX 2>/dev/null || echo "/tmp/netmgr_cap.$$.$RANDOM.tmp")
+    whiptail "$@" 1>&2 2>"$tmp_cap"
+    local status=$?
+    local content
+    content=$(cat "$tmp_cap" 2>/dev/null | tr -d '\r')
+    rm -f "$tmp_cap"
+    if [[ $status -ne 0 ]]; then
+        return "$status"
+    fi
+    echo "$content"
+    return 0
+}
+
 # Prompts Interativos de Input com Loop e Validação Estrita
 prompt_valid_ipv4() {
     local title="$1"
@@ -132,15 +148,15 @@ prompt_valid_ipv4() {
     local input
 
     while true; do
-        input=$(whiptail --title "$title" --inputbox "$msg" 8 62 "$default_val" 3>&1 1>&2 2>&3)
-        [[ $? -ne 0 ]] && return 1
+        input=$(whiptail_capture --title "$title" --inputbox "$msg" 8 62 "$default_val") || return 1
+        input=$(echo "$input" | tr -d '[:space:]')
 
         if validate_ipv4 "$input"; then
             echo "$input"
             return 0
         fi
         whiptail --title "Entrada Inválida" \
-            --msgbox "O endereço IPv4 informado '$input' não é válido!\nFormato esperado: X.X.X.X (octetos de 0 a 255)." 8 60
+            --msgbox "O endereço IPv4 informado '$input' não é válido!\nFormato esperado: X.X.X.X (octetos de 0 a 255)." 8 60 >&2
     done
 }
 
@@ -151,15 +167,15 @@ prompt_valid_cidr() {
     local input
 
     while true; do
-        input=$(whiptail --title "$title" --inputbox "$msg" 8 65 "$default_val" 3>&1 1>&2 2>&3)
-        [[ $? -ne 0 ]] && return 1
+        input=$(whiptail_capture --title "$title" --inputbox "$msg" 8 65 "$default_val") || return 1
+        input=$(echo "$input" | tr -d '[:space:]')
 
         if validate_cidr "$input"; then
             echo "$input"
             return 0
         fi
         whiptail --title "Entrada Inválida" \
-            --msgbox "O endereço CIDR '$input' não é válido!\nFormato esperado: X.X.X.X/Mascara (Ex: 192.168.1.0/24)." 8 60
+            --msgbox "O endereço CIDR '$input' não é válido!\nFormato esperado: X.X.X.X/Mascara (Ex: 192.168.1.0/24)." 8 60 >&2
     done
 }
 
@@ -170,15 +186,15 @@ prompt_valid_port() {
     local input
 
     while true; do
-        input=$(whiptail --title "$title" --inputbox "$msg" 8 60 "$default_val" 3>&1 1>&2 2>&3)
-        [[ $? -ne 0 ]] && return 1
+        input=$(whiptail_capture --title "$title" --inputbox "$msg" 8 60 "$default_val") || return 1
+        input=$(echo "$input" | tr -d '[:space:]')
 
         if validate_port "$input"; then
             echo "$input"
             return 0
         fi
         whiptail --title "Entrada Inválida" \
-            --msgbox "A porta '$input' é inválida!\nInforme um número inteiro entre 1 e 65535." 8 55
+            --msgbox "A porta '$input' é inválida!\nInforme um número inteiro entre 1 e 65535." 8 55 >&2
     done
 }
 

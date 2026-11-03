@@ -6,18 +6,25 @@
 BLACKLIST_FILE="/etc/squid/bloqueados.txt"
 
 manage_squid_menu() {
+    local tmp_sq
+    tmp_sq=$(mktemp /tmp/netmgr_sq.XXXXXX 2>/dev/null || echo "/tmp/netmgr_sq.$$.tmp")
+
     while true; do
-        local sq_opt
-        sq_opt=$(whiptail --title "Gerenciamento de Proxy Squid" \
+        whiptail --title "Gerenciamento de Proxy Squid" \
             --menu "Escolha a operação desejada para o Squid:" 17 68 6 \
             "1" "Configurar / Inicializar Servidor Proxy Squid" \
             "2" "Adicionar Domínio à Lista de Bloqueio (Blacklist)" \
             "3" "Remover Domínio da Lista de Bloqueio" \
             "4" "Visualizar Lista de Domínios Bloqueados" \
             "5" "Recarregar Configurações (squid -k reconfigure)" \
-            "6" "Retornar ao Menu Principal" 3>&1 1>&2 2>&3)
+            "6" "Retornar ao Menu Principal" 2>"$tmp_sq"
 
-        [[ $? -ne 0 || "$sq_opt" == "6" ]] && break
+        local exit_status=$?
+        local sq_opt
+        sq_opt=$(cat "$tmp_sq" 2>/dev/null | tr -d '\r\n[:space:]')
+        : > "$tmp_sq"
+
+        [[ $exit_status -ne 0 || "$sq_opt" == "6" ]] && break
 
         case "$sq_opt" in
             1) configure_squid_proxy ;;
@@ -27,6 +34,7 @@ manage_squid_menu() {
             5) squid_reload_config ;;
         esac
     done
+    rm -f "$tmp_sq"
 }
 
 # 1. Configuração Principal do Squid Proxy
@@ -38,16 +46,19 @@ configure_squid_proxy() {
     localnet=$(prompt_valid_cidr "Squid - Rede Local Autorizada" "Sub-rede autorizada a navegar (ACL localnet):" "192.168.1.0/24") || return
 
     local cache_disk_mb
-    cache_disk_mb=$(whiptail --title "Squid - Cache em Disco" \
-        --inputbox "Espaço em disco para cache em MB (ufs /var/spool/squid):" 8 60 "2048" 3>&1 1>&2 2>&3) || return
+    cache_disk_mb=$(whiptail_capture --title "Squid - Cache em Disco" \
+        --inputbox "Espaço em disco para cache em MB (ufs /var/spool/squid):" 8 60 "2048") || return
+    cache_disk_mb=$(echo "$cache_disk_mb" | tr -d '[:space:]')
 
     local cache_ram_mb
-    cache_ram_mb=$(whiptail --title "Squid - Memória RAM para Cache" \
-        --inputbox "Quantidade de memória RAM alocada para cache (MB):" 8 60 "256" 3>&1 1>&2 2>&3) || return
+    cache_ram_mb=$(whiptail_capture --title "Squid - Memória RAM para Cache" \
+        --inputbox "Quantidade de memória RAM alocada para cache (MB):" 8 60 "256") || return
+    cache_ram_mb=$(echo "$cache_ram_mb" | tr -d '[:space:]')
 
     local hostname
-    hostname=$(whiptail --title "Squid - Visible Hostname" \
-        --inputbox "Nome visível do servidor proxy (visible_hostname):" 8 60 "proxy-corp.local" 3>&1 1>&2 2>&3) || return
+    hostname=$(whiptail_capture --title "Squid - Visible Hostname" \
+        --inputbox "Nome visível do servidor proxy (visible_hostname):" 8 60 "proxy-corp.local") || return
+    hostname=$(echo "$hostname" | tr -d '[:space:]')
 
     gauge_apt_install "Instalação do Squid Proxy" "squid"
 
@@ -136,8 +147,8 @@ squid_add_blocked_domain() {
     touch "$BLACKLIST_FILE"
 
     local domain
-    domain=$(whiptail --title "Adicionar à Blacklist" \
-        --inputbox "Informe o domínio a ser bloqueado (Ex: facebook.com ou .tiktok.com):" 8 60 3>&1 1>&2 2>&3) || return
+    domain=$(whiptail_capture --title "Adicionar à Blacklist" \
+        --inputbox "Informe o domínio a ser bloqueado (Ex: facebook.com ou .tiktok.com):" 8 60) || return
     domain=$(echo "$domain" | tr '[:upper:]' '[:lower:]' | xargs)
     [[ -z "$domain" ]] && return
 
@@ -170,9 +181,10 @@ squid_remove_blocked_domain() {
     done < "$BLACKLIST_FILE"
 
     local selected_domain
-    selected_domain=$(whiptail --title "Remover Domínio Bloqueado" \
-        --menu "Selecione o domínio para liberar o acesso:" 16 65 6 "${domains_menu[@]}" 3>&1 1>&2 2>&3)
-    [[ $? -ne 0 || -z "$selected_domain" ]] && return
+    selected_domain=$(whiptail_capture --title "Remover Domínio Bloqueado" \
+        --menu "Selecione o domínio para liberar o acesso:" 16 65 6 "${domains_menu[@]}") || return
+    selected_domain=$(echo "$selected_domain" | tr -d '[:space:]')
+    [[ -z "$selected_domain" ]] && return
 
     # Remove o domínio do arquivo
     sed -i "/^${selected_domain}$/d" "$BLACKLIST_FILE"

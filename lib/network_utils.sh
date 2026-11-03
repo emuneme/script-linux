@@ -23,12 +23,11 @@ select_network_interface() {
     fi
 
     local selected_iface
-    selected_iface=$(whiptail --title "Detecção de Placas de Rede" \
-        --menu "$prompt_msg" 15 66 5 "${ifaces_menu[@]}" 3>&1 1>&2 2>&3)
+    selected_iface=$(whiptail_capture --title "Detecção de Placas de Rede" \
+        --menu "$prompt_msg" 15 66 5 "${ifaces_menu[@]}") || return 1
 
-    if [[ $? -ne 0 || -z "$selected_iface" ]]; then
-        return 1
-    fi
+    selected_iface=$(echo "$selected_iface" | tr -d '[:space:]')
+    [[ -z "$selected_iface" ]] && return 1
 
     echo "$selected_iface"
     return 0
